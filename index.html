@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze Solver AI</title>
+    <style>
+        /* styles.css */
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: yellow;
+}
+
+#mazeContainer {
+    display: grid;
+    grid-template-columns: repeat(10, 40px); /* adjust as needed */
+    gap: 8px;
+    margin: 20px;
+}
+
+.cell {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 3px solid black;
+    background-color: white;
+}
+
+.start {
+    background-color: green !important;
+}
+
+.end {
+    background-color: red !important;
+}
+
+.path {
+    background-color: lightblue;
+}
+
+.closed {
+    background-color: gray;
+}
+
+.obstacle {
+    background-color: black;
+}
+.lilita-one-regular {
+    font-family: "Lilita One", sans-serif;
+    font-weight: 400;
+    font-size: 60px;
+    font-style: normal;
+}
+
+.quintessential-regular {
+    font-family: "Quintessential", serif;
+    font-weight: 400;
+    font-size: 20px;
+    font-style: normal;
+}
+
+
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
+</head>
+<body>
+    
+    <h1 class="lilita-one-regular">Maze Solver AI</h1>
+    <div id="mazeContainer"></div>
+    <script>
+        // app.js
+const grid = []; // Create a 2D array for the maze
+const openList = [];
+const closedList = [];
+const rows = 10;
+const cols = 10;
+let startNode, endNode;
+
+function initMaze() {
+    const mazeContainer = document.getElementById('mazeContainer');
+    mazeContainer.style.gridTemplateColumns = `repeat(${cols}, 40px)`;
+
+    for (let row = 0; row < rows; row++) {
+        grid[row] = [];
+        for (let col = 0; col < cols; col++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.id = `cell-${row}-${col}`;
+            cell.addEventListener('click', () => toggleObstacle(row, col));
+            mazeContainer.appendChild(cell);
+            grid[row][col] = { row, col, g: 0, h: 0, f: 0, parent: null, isObstacle: false };
+        }
+    }
+
+    // Define start and end points
+    startNode = grid[0][0];
+    endNode = grid[rows - 1][cols - 1];
+    document.getElementById(`cell-${startNode.row}-${startNode.col}`).classList.add('start');
+    document.getElementById(`cell-${endNode.row}-${endNode.col}`).classList.add('end');
+}
+
+function toggleObstacle(row, col) {
+    const cell = grid[row][col];
+    cell.isObstacle = !cell.isObstacle;
+    document.getElementById(`cell-${row}-${col}`).classList.toggle('obstacle');
+}
+
+function startPathfinding() {
+    openList.push(startNode);
+
+    while (openList.length > 0) {
+        let currentNode = openList.reduce((a, b) => (a.f < b.f ? a : b));
+        if (currentNode === endNode) {
+            return reconstructPath(currentNode);
+        }
+
+        openList.splice(openList.indexOf(currentNode), 1);
+        closedList.push(currentNode);
+
+        for (let neighbor of getNeighbors(currentNode)) {
+            if (closedList.includes(neighbor) || neighbor.isObstacle) continue;
+
+            let tentativeG = currentNode.g + 1;
+            if (!openList.includes(neighbor)) openList.push(neighbor);
+            else if (tentativeG >= neighbor.g) continue;
+
+            neighbor.g = tentativeG;
+            neighbor.h = heuristic(neighbor, endNode);
+            neighbor.f = neighbor.g + neighbor.h;
+            neighbor.parent = currentNode;
+        }
+    }
+}
+
+function getNeighbors(node) {
+    const neighbors = [];
+    const directions = [[0,1], [1,0], [0,-1], [-1,0]];
+    for (let [dx, dy] of directions) {
+        let newRow = node.row + dx, newCol = node.col + dy;
+        if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols) {
+            neighbors.push(grid[newRow][newCol]);
+        }
+    }
+    return neighbors;
+}
+
+function heuristic(a, b) {
+    return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
+}
+
+function reconstructPath(node) {
+    while (node) {
+        document.getElementById(`cell-${node.row}-${node.col}`).classList.add('path');
+        node = node.parent;
+    }
+}
+
+initMaze();
+
+    </script>
+    <button class="quintessential-regular" onclick="startPathfinding()">Start Solving</button>
+   
+</body>
+</html>
